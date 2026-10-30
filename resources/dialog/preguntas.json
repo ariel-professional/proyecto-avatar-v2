@@ -1,0 +1,56 @@
+{
+  "preguntas": [
+    {
+      "clave": "hola",
+      "respuesta": "Hola, en que te puedo ayudar"
+    },
+    {
+      "clave": "buenas",
+      "respuesta": "Buenas, en que te puedo ayudar"
+    },
+    {
+      "clave": "saludos",
+      "respuesta": "Un saludo, en que te puedo colaborar"
+    },
+    {
+      "clave": "nombre",
+      "respuesta": "Soy tu asistente virtual"
+    },
+    {
+      "clave": "quien",
+      "respuesta": "Soy tu asistente virtual creado para responder tus dudas"
+    },
+    {
+      "clave": "carreras",
+      "respuesta": "Tiene ingeniera en informática (la mejor), ingeniería civil, entre otras que podes consultar en la sección de asistencia académica"
+    },
+    {
+      "clave": "llamas",
+      "respuesta": "Me llamo Asistente Virtual"
+    },
+    {
+      "clave": "como estas",
+      "respuesta": "Todo bien por aca, y vos?"
+    },
+    {
+      "clave": "que haces",
+      "respuesta": "Estoy respondiendo a tus preguntas y procesando tu voz"
+    },
+    {
+      "clave": "chao",
+      "respuesta": "Hasta luego"
+    },
+    {
+      "clave": "chau",
+      "respuesta": "Hasta luego, nos vemos"
+    },
+    {
+      "clave": "adios",
+      "respuesta": "Adios, que tengas un buen dia"
+    },
+    {
+      "clave": "gracias",
+      "respuesta": "De nada, estoy para ayudarte"
+    }
+  ]
+}
