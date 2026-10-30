@@ -1,150 +1,167 @@
-# Avatar en Python — prototipo
+# Avatar virtual en Python
 
-Migración simple del proyecto de `legacy/`, para probar e iterar. Un archivo
-principal, recursos propios copiados del legado y cuatro dependencias principales. Sin tests,
-Docker, servidor ni servicios pagos. No modifica el proyecto C++.
+Esta versión permite seguir trabajando sobre el proyecto original en C++,
+conservando sus animaciones y respuestas. El reconocimiento de voz se ejecuta
+localmente.
 
-Escucha el micrófono, transcribe en español con Whisper, busca una respuesta en
-el mismo JSON y la reproduce mientras anima el mismo avatar. Mantiene las doce
-respuestas, búsqueda por substring y prioridad alfabética de claves. No hay un
-chat generativo ni historial. Los textos también se muestran en la ventana y consola.
+## Empezar en Windows
 
-## Instalar y ejecutar en Windows
+1. Instalá **Python 3.11 o 3.12 de 64 bits** y seleccioná **Add Python to PATH**
+   durante la instalación.
+2. Abrí la carpeta `proyecto_avatar_python` y hacé doble clic en **`iniciar.cmd`**.
+3. Esperá a que aparezca **“Te escucho”**, hablá y dejá una pausa al terminar.
 
-**Inicio rápido: doble clic en `iniciar.cmd`.** Solo necesita Python instalado.
-El arranque prepara el entorno e instala lo que falte automáticamente. Si abrís
-`main.py` desde el editor o con `python main.py`, también selecciona el entorno
-correcto. La primera preparación necesita Internet.
+El inicio crea el entorno `.venv` e instala los paquetes que falten. La primera
+vez también descarga el modelo de reconocimiento `small`, de unos **500 MB**.
+Necesitás Internet para esa preparación; después el modelo queda guardado
+en la caché de Hugging Face del usuario y puede usarse sin conexión.
 
-Usar Python **3.11 o 3.12 de 64 bits**. Desde la raíz del repositorio, en PowerShell:
+Mientras transcribe o responde, el micrófono queda cerrado. Esperá a que vuelva
+a mostrar “Te escucho” antes de hacer otra consulta. Para salir, presioná
+**Escape** o cerrá la ventana.
+
+También podés iniciarlo desde PowerShell, estando en esta carpeta:
 
 ```powershell
-cd proyecto_avatar_python
+.\iniciar.cmd
+```
+
+## Dependencias
+
+### Python y paquetes
+
+Usá Python **3.11 o 3.12 de 64 bits**, con `pip` y `venv`. La versión comprobada
+en este proyecto es Python 3.12 en Windows.
+
+Los paquetes y sus rangos de versión están declarados en
+[`requirements.txt`](requirements.txt):
+
+| Paquete | Versión admitida | Para qué se usa |
+|---|---|---|
+| `pygame` | `>=2.6,<3` | Ventana, animaciones, teclado y eventos. |
+| `sounddevice` | `>=0.5,<0.6` | Captura del micrófono mediante PortAudio. |
+| `faster-whisper` | `>=1.2,<2` | Transcripción en español y detección de voz. |
+| `numpy` | `>=1.26,<3` | Manejo de las muestras de audio. |
+| `av` (PyAV) | `>=11,<17` | Procesamiento de audio requerido por faster-whisper. El límite evita una incompatibilidad detectada con versiones posteriores. |
+
+`pip` instala también las dependencias de esos paquetes, entre ellas
+`ctranslate2` para la inferencia, `onnxruntime` para el detector de voz Silero,
+`huggingface-hub` para descargar modelos, `tokenizers`, `tqdm` y `cffi`.
+Sus propias dependencias se resuelven automáticamente; no hay que instalarlas
+una por una. Los módulos como `json`, `threading` y `pathlib` vienen con Python.
+
+Si preferís hacer la instalación manual en Windows:
+
+```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe main.py
 ```
 
-No hace falta activar el entorno. Si ya existe `.venv`, reutilizarlo.
-Después de instalar, se puede abrir **`iniciar.cmd` con doble clic** o ejecutar
-`.\iniciar.cmd` desde esta carpeta. Usa siempre el Python de `.venv` y activa
-el reconocimiento de voz por defecto. Para el modo teclado: `.\iniciar.cmd --texto`.
+### Sistema, audio y modelo
 
-Si aparece `No module named faster_whisper`, probablemente se abrió con otro
-Python (por ejemplo desde el botón de ejecutar del editor). Usar `iniciar.cmd`
-o seleccionar `.venv/Scripts/python.exe` como intérprete del editor.
+| Requisito | Detalle |
+|---|---|
+| Interfaz gráfica | Una sesión de escritorio para abrir la ventana. |
+| Entrada de audio | Micrófono con permiso de acceso y soporte para 16 kHz, mono. |
+| Salida de audio | Altavoces o auriculares para escuchar las respuestas. |
+| Modelo de voz | Whisper `small` multilingüe, en formato CTranslate2. Se descarga automáticamente. El archivo `ggml-base.bin` del legado no sirve para este motor. |
+| Windows | Windows PowerShell y `System.Speech` para sintetizar voz. Usa una voz española instalada si la encuentra; de lo contrario, la predeterminada. CTranslate2 también requiere el runtime de Visual C++, que suele estar instalado. |
+| Linux | PortAudio (`libportaudio2`) y Speech Dispatcher con su módulo espeak-ng, o el comando `espeak-ng` como alternativa. |
+| macOS | El comando del sistema `say`, con la voz predeterminada. Este entorno todavía no fue verificado. |
 
-La primera ejecución por voz descarga el modelo `small` de faster-whisper
-(del orden de 500 MB), por lo que necesita Internet y puede demorar.
-Después se usa el modelo guardado en la caché de Hugging Face del usuario.
-No utiliza el `ggml-base.bin` del legado: son formatos distintos.
-Una vez descargado y con las dependencias instaladas, el procesamiento es local.
+En Windows y macOS, la instalación de `sounddevice` con `pip` incluye PortAudio.
+Las distribuciones binarias de pygame incluyen las bibliotecas SDL necesarias
+para la ventana. PyAV incluye FFmpeg en sus paquetes binarios. La aplicación
+usa CPU con int8: no requiere una GPU ni CUDA.
 
-Windows usa el sintetizador instalado mediante `System.Speech`, sin paquetes
-adicionales. Selecciona una voz española si está disponible; si no, usa la
-predeterminada y avisa en consola. La disponibilidad de voces depende de Windows.
+Referencias de instalación: [sounddevice](https://python-sounddevice.readthedocs.io/en/latest/installation.html),
+[CTranslate2 y runtime de Visual C++](https://opennmt.net/CTranslate2/installation.html),
+[faster-whisper](https://github.com/SYSTRAN/faster-whisper).
 
-## Prueba rápida sin micrófono ni descarga del modelo
+## Probar con el teclado
 
-```powershell
-.\.venv\Scripts\python.exe main.py --texto
-```
-
-Escribir `hola`, `cómo estás`, `quién sos` o `gracias` y presionar Enter.
-Con `--texto --sin-voz` se puede probar solo ventana, animaciones y diálogo,
-sin utilizar audio. Escape o cerrar la ventana termina la aplicación.
-La entrada por teclado está disponible únicamente en modo `--texto`.
-
-## Micrófono y sensibilidad
+Para consultar sin micrófono ni cargar el modelo de reconocimiento:
 
 ```powershell
-.\.venv\Scripts\python.exe main.py --listar-microfonos
-.\.venv\Scripts\python.exe main.py --microfono 1
-.\.venv\Scripts\python.exe main.py --umbral 0.03
+.\iniciar.cmd --texto
 ```
 
-El número de micrófono depende del equipo. Por defecto usa el dispositivo de
-entrada del sistema a 16 kHz, mono. El umbral predeterminado es `0.03`.
-Si no detecta voz, probar `--umbral 0.01`, revisar el dispositivo y el permiso de micrófono
-para aplicaciones de escritorio. Si se activa con ruido, subir el umbral.
-Si el dispositivo rechaza 16 kHz, seleccionar otra entrada compatible.
+Escribí una consulta y presioná **Enter**. Podés probar con `hola`, `cómo estás`,
+`quién sos` o `gracias`. Para desactivar también la lectura de las respuestas:
 
-Se conserva aproximadamente 0,3 segundos de audio previo a la activación para
-no perder el inicio de las palabras. Se graban intervenciones de hasta doce
-segundos y se transcriben después de unos 1,1 segundos de silencio. Se utiliza
-el detector de voz Silero integrado en faster-whisper para descartar tramos sin
-habla, y decodificación con cinco candidatos y temperatura cero.
-Mientras transcribe o responde no escucha; esperar
-a que aparezca de nuevo “Te escucho” antes de hablar. No hay cancelación de eco,
-interrupción del asistente.
+```powershell
+.\iniciar.cmd --texto --sin-voz
+```
 
-## Linux
+El modo teclado usa las mismas respuestas del JSON. El campo para escribir
+solo aparece cuando se inicia con `--texto`.
 
-En Ubuntu/Debian, además de Python y su soporte para venv:
+## Ajustar micrófono y reconocimiento
+
+Estas opciones se agregan al comando de inicio:
+
+| Opción | Ejemplo | Efecto |
+|---|---|---|
+| `--listar-microfonos` | `.\iniciar.cmd --listar-microfonos` | Muestra los dispositivos disponibles y sale. |
+| `--microfono N` | `.\iniciar.cmd --microfono 1` | Elige una entrada por su número. Por defecto usa la del sistema. |
+| `--umbral VALOR` | `.\iniciar.cmd --umbral 0.01` | Cambia la sensibilidad. El valor predeterminado es `0.03`; un valor menor detecta sonidos más suaves. |
+| `--modelo NOMBRE` | `.\iniciar.cmd --modelo base` | Cambia el modelo. `small` es el predeterminado; `base` y `tiny` consumen menos recursos, con menor precisión esperable. |
+| `--sin-voz` | `.\iniciar.cmd --sin-voz` | Muestra las respuestas sin leerlas en voz alta. |
+
+La grabación conserva unos 0,3 segundos previos a la activación para no perder
+el comienzo de las palabras. Espera unos 1,1 segundos de silencio para cerrar
+la frase y admite hasta 12 segundos por intervención. Antes de transcribir,
+Silero filtra los tramos sin voz.
+
+Cada modelo se descarga al usarlo por primera vez. `--modelo` también admite
+la ruta a una carpeta local con un modelo CTranslate2.
+
+## Editar las respuestas
+
+La base está en [`resources/dialog/preguntas.json`](resources/dialog/preguntas.json).
+Contiene un array llamado `preguntas`, con una `clave` y una `respuesta` por entrada:
+
+```json
+{
+  "preguntas": [
+    {
+      "clave": "hola",
+      "respuesta": "Hola, ¿en qué te puedo ayudar?"
+    }
+  ]
+}
+```
+
+Podés agregar o modificar entradas respetando ese formato. Guardá el archivo
+y reiniciá la aplicación para cargar los cambios.
+
+La búsqueda ignora mayúsculas y tildes. Si encuentra una clave dentro de la
+consulta, devuelve su respuesta. Cuando coinciden varias, elige la primera
+en orden alfabético de clave. Si no encuentra ninguna, responde
+“Disculpa, no entendí tu consulta”.
+
+Los recursos se buscan junto a `main.py`, por lo que podés abrir el programa
+desde otra carpeta. Si necesitás usar recursos distintos, definí la variable
+de entorno `AVATAR_RESOURCES_DIR` con la ruta a esa carpeta.
+
+## Instalar en Linux
+
+En Ubuntu o Debian, instalá Python, el soporte para entornos virtuales y los
+componentes de audio:
 
 ```bash
-sudo apt install python3-venv libportaudio2 speech-dispatcher speech-dispatcher-espeak-ng espeak-ng
-cd proyecto_avatar_python
+sudo apt install python3 python3-venv python3-pip libportaudio2 speech-dispatcher speech-dispatcher-espeak-ng espeak-ng
+```
+
+Después, desde `proyecto_avatar_python`:
+
+```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python main.py
 ```
 
-Necesita una sesión gráfica y audio configurado. Usa `spd-say` en español;
-si no está disponible, intenta `espeak-ng`. En macOS se contempla el comando
-`say`, con la voz predeterminada del sistema, pero no se verificó ese entorno.
-
-## Cambiar respuestas y modelo
-
-- Editar `resources/dialog/preguntas.json` y reiniciar. Conserva el formato
-  `{"preguntas": [{"clave": "hola", "respuesta": "Hola!"}]}`.
-- `--modelo small` es el predeterminado, para priorizar precisión. Es más lento
-  y ocupa más memoria que `base`. Para una máquina con pocos recursos se puede
-  usar `--modelo base` o `--modelo tiny`, con menor precisión esperable.
-  Cada modelo se descarga al primer uso. Se ejecuta en CPU con int8;
-  no requiere CUDA. También admite una carpeta local de modelo CTranslate2.
-- `--sin-voz` desactiva solamente la reproducción de las respuestas.
-- `AVATAR_RESOURCES_DIR` permite usar otra carpeta de recursos. Normalmente
-  no se necesita: las rutas se resuelven desde `main.py`, sin depender del cwd.
-
-## Diferencias pequeñas respecto al legado
-
-- Normaliza mayúsculas y tildes para buscar respuestas.
-- Muestra la animación de escucha y los textos de la interacción.
-- Conserva los silencios dentro de la grabación y acepta intervenciones breves.
-- Transcribe fuera del hilo gráfico; el micrófono se cierra durante la respuesta.
-- La animación de habla dura lo que tarda el comando de síntesis, en lugar de
-  calcular una duración a partir de la cantidad de letras.
-- Analiza los metadatos de animación con el parser JSON de Python.
-
-No se busca equivalencia exacta de transcripciones con whisper.cpp: cambió el
-motor de inferencia, aunque se mantiene Whisper `base` multilingüe en español.
-La precisión y latencia deben evaluarse hablando en el equipo objetivo.
-Un error de modelo o micrófono se muestra en pantalla y consola; corregirlo y
-reiniciar. Un fallo de síntesis conserva la respuesta escrita y permite continuar.
-El cierre de la ventana es inmediato; una inferencia nativa en curso no tiene
-cancelación fina en este prototipo.
-
-## Comprobación realizada
-
-En Windows con Python 3.12: instalación e imports correctos, dependencias
-compatibles (`pip check`), carga del modelo `base`, lectura del micrófono
-predeterminado a 16 kHz, síntesis a un WAV con la voz española Helena y
-transcripción de ese audio como “Hola, como estas?”. La consulta produjo
-“Todo bien por aca, y vos?”. También se ejecutó la ventana con driver SDL
-sin pantalla, ingreso por teclado, animaciones y cierre, y se inspeccionó
-una captura del resultado. Los siete archivos de recursos son idénticos
-a los originales. No se agregaron tests.
-
-Falta comprobar una conversación real de punta a punta, la reproducción por
-los altavoces y el funcionamiento en Linux/macOS. Los modelos `base` y `small`
-ya quedaron descargados en la caché del usuario de este equipo.
-
-Después del ajuste de reconocimiento se comprobó también el filtro Silero:
-una frase sintetizada de 5,31 segundos se transcribió completa; muestras de
-silencio y ruido sintético no produjeron texto. Esto no mide la precisión
-con la voz del usuario ni con ruido real del ambiente.
-
-Referencias de las bibliotecas: [faster-whisper](https://github.com/SYSTRAN/faster-whisper),
-[sounddevice](https://python-sounddevice.readthedocs.io/en/latest/),
-[pygame](https://www.pygame.org/docs/).
+Las opciones son las mismas; por ejemplo, `.venv/bin/python main.py --texto`.
+La sesión debe tener una pantalla y el audio configurados. La instalación
+automática de `iniciar.cmd` corresponde únicamente a Windows.
