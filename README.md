@@ -84,37 +84,41 @@ Referencias de instalación: [sounddevice](https://python-sounddevice.readthedoc
 Para consultar sin micrófono ni cargar el modelo de reconocimiento:
 
 ```powershell
-.\iniciar.cmd --texto
+.\iniciar.cmd --text
 ```
 
 Escribí una consulta y presioná **Enter**. Podés probar con `hola`, `cómo estás`,
 `quién sos` o `gracias`. Para desactivar también la lectura de las respuestas:
 
 ```powershell
-.\iniciar.cmd --texto --sin-voz
+.\iniciar.cmd --text --mute
 ```
 
 El modo teclado usa las mismas respuestas del JSON. El campo para escribir
-solo aparece cuando se inicia con `--texto`.
+solo aparece cuando se inicia con `--text`.
 
 ## Ajustar micrófono y reconocimiento
 
 Estas opciones se agregan al comando de inicio:
 
+Las opciones usan nombres en inglés. Por compatibilidad, también se aceptan
+los anteriores: `--texto`, `--sin-voz`, `--modelo`, `--microfono`,
+`--listar-microfonos` y `--umbral`. La interfaz y las respuestas siguen en español.
+
 | Opción | Ejemplo | Efecto |
 |---|---|---|
-| `--listar-microfonos` | `.\iniciar.cmd --listar-microfonos` | Muestra los dispositivos disponibles y sale. |
-| `--microfono N` | `.\iniciar.cmd --microfono 1` | Elige una entrada por su número. Por defecto usa la del sistema. |
-| `--umbral VALOR` | `.\iniciar.cmd --umbral 0.01` | Cambia la sensibilidad. El valor predeterminado es `0.03`; un valor menor detecta sonidos más suaves. |
-| `--modelo NOMBRE` | `.\iniciar.cmd --modelo base` | Cambia el modelo. `small` es el predeterminado; `base` y `tiny` consumen menos recursos, con menor precisión esperable. |
-| `--sin-voz` | `.\iniciar.cmd --sin-voz` | Muestra las respuestas sin leerlas en voz alta. |
+| `--list-microphones` | `.\iniciar.cmd --list-microphones` | Muestra los dispositivos disponibles y sale. |
+| `--microphone N` | `.\iniciar.cmd --microphone 1` | Elige una entrada por su número. Por defecto usa la del sistema. |
+| `--threshold VALOR` | `.\iniciar.cmd --threshold 0.01` | Cambia la sensibilidad. El valor predeterminado es `0.03`; un valor menor detecta sonidos más suaves. |
+| `--model NOMBRE` | `.\iniciar.cmd --model base` | Cambia el modelo. `small` es el predeterminado; `base` y `tiny` consumen menos recursos, con menor precisión esperable. |
+| `--mute` | `.\iniciar.cmd --mute` | Muestra las respuestas sin leerlas en voz alta. |
 
 La grabación conserva unos 0,3 segundos previos a la activación para no perder
 el comienzo de las palabras. Espera unos 1,1 segundos de silencio para cerrar
 la frase y admite hasta 12 segundos por intervención. Antes de transcribir,
 Silero filtra los tramos sin voz.
 
-Cada modelo se descarga al usarlo por primera vez. `--modelo` también admite
+Cada modelo se descarga al usarlo por primera vez. `--model` también admite
 la ruta a una carpeta local con un modelo CTranslate2.
 
 ## Editar las respuestas
@@ -162,6 +166,6 @@ python3 -m venv .venv
 .venv/bin/python main.py
 ```
 
-Las opciones son las mismas; por ejemplo, `.venv/bin/python main.py --texto`.
+Las opciones son las mismas; por ejemplo, `.venv/bin/python main.py --text`.
 La sesión debe tener una pantalla y el audio configurados. La instalación
 automática de `iniciar.cmd` corresponde únicamente a Windows.

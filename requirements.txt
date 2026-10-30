@@ -2,5 +2,5 @@ pygame>=2.6,<3
 sounddevice>=0.5,<0.6
 faster-whisper>=1.2,<2
 numpy>=1.26,<3
-# faster-whisper 1.2 utiliza metadata_errors, retirado en PyAV reciente.
+# faster-whisper 1.2 uses metadata_errors, removed in newer PyAV versions.
 av>=11,<17
