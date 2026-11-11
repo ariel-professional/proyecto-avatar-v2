@@ -16,9 +16,14 @@ vez también descarga el modelo de reconocimiento `small`, de unos **500 MB**.
 Necesitás Internet para esa preparación; después el modelo queda guardado
 en la caché de Hugging Face del usuario y puede usarse sin conexión.
 
-Mientras transcribe o responde, el micrófono queda cerrado. Esperá a que vuelva
-a mostrar “Te escucho” antes de hacer otra consulta. Para salir, presioná
+La transcripción comienza mientras hablás. Cuando termina la captura, el
+micrófono se cierra hasta que el avatar completa su respuesta. Esperá a que
+vuelva a mostrar “Te escucho” antes de hacer otra consulta. Para salir, presioná
 **Escape** o cerrá la ventana.
+
+En Windows, la voz se prepara una sola vez al iniciar y se reutiliza para cada
+respuesta. La animación de habla termina cuando el sintetizador confirma que
+finalizó la reproducción. Con `--mute` no se inicia el sintetizador.
 
 También podés iniciarlo desde PowerShell, estando en esta carpeta:
 
@@ -97,6 +102,56 @@ Escribí una consulta y presioná **Enter**. Podés probar con `hola`, `cómo es
 El modo teclado usa las mismas respuestas del JSON. El campo para escribir
 solo aparece cuando se inicia con `--text`.
 
+## Pulsar para hablar
+
+Con la ventana del avatar enfocada, presioná **F2** para activar o desactivar
+este modo. El modo elegido aparece debajo del avatar.
+
+- **Pulsar para hablar:** mantené **Espacio** mientras hablás y soltalo para
+  enviar la consulta. Una pausa no termina la captura mientras mantengas la
+  tecla. El límite sigue siendo 12 segundos; después hay que volver a pulsar.
+- **Escucha automática:** hablá sin pulsar ninguna tecla. La consulta termina
+  después de unos 0,7 segundos de silencio.
+
+Para iniciar directamente en el modo de pulsar para hablar:
+
+```powershell
+.\iniciar.cmd --push-to-talk
+```
+
+También se acepta `--pulsar-para-hablar`. F2 permite volver a la escucha automática
+durante esa misma sesión; la selección no se guarda al cerrar la aplicación.
+Si cambiás de modo durante una captura, esa consulta se descarta. Si la ventana
+pierde el foco, se libera Espacio para evitar que la captura quede activada.
+Las pulsaciones durante la preparación del modelo o una respuesta se ignoran.
+Las capturas de menos de 0,2 segundos también se descartan.
+
+## Transcripción durante el habla
+
+En los dos modos de voz, se envía una copia del audio acumulado aproximadamente
+cada segundo a un trabajador de transcripción. El texto parcial aparece en la
+ventana y el avatar conserva la animación de escucha durante la captura.
+Solo se ejecuta una inferencia a la vez y se conserva como máximo una copia
+pendiente, reemplazándola por la más reciente si el procesador se atrasa.
+
+Cuando una transcripción parcial contiene una clave del JSON, se deja preparada
+su respuesta y **no se vuelve a ejecutar Whisper para esa intervención**.
+La captura continúa hasta que sueltes Espacio o, en modo automático, termine
+el silencio. Entonces se utiliza la respuesta preparada. Si no se encontró
+ninguna clave, se transcribe el audio final y se aplica la respuesta habitual
+por defecto cuando corresponda.
+
+La primera coincidencia parcial queda fijada, aunque después digas otra clave.
+Por ejemplo, si ya detectó `hola`, no reconsiderará la respuesta si luego
+preguntás por `carreras`. Se conserva la búsqueda por fragmentos de texto del
+JSON, sin normalizarla a una búsqueda semántica. Una transcripción parcial
+equivocada también puede fijar una respuesta equivocada.
+
+Esta transcripción usa fragmentos acumulados, no un motor de streaming nativo.
+Puede reducir la espera cuando encuentra una clave antes de terminar la frase,
+pero también hace más trabajo si no encuentra ninguna. Una inferencia nativa
+ya iniciada no se puede cancelar; cambiar de modo puede esperar a que termine.
+
 ## Ajustar micrófono y reconocimiento
 
 Estas opciones se agregan al comando de inicio:
@@ -112,10 +167,12 @@ los anteriores: `--texto`, `--sin-voz`, `--modelo`, `--microfono`,
 | `--threshold VALOR` | `.\iniciar.cmd --threshold 0.01` | Cambia la sensibilidad. El valor predeterminado es `0.03`; un valor menor detecta sonidos más suaves. |
 | `--model NOMBRE` | `.\iniciar.cmd --model base` | Cambia el modelo. `small` es el predeterminado; `base` y `tiny` consumen menos recursos, con menor precisión esperable. |
 | `--mute` | `.\iniciar.cmd --mute` | Muestra las respuestas sin leerlas en voz alta. |
+| `--push-to-talk` | `.\iniciar.cmd --push-to-talk` | Inicia con Espacio para hablar; F2 activa o desactiva este modo. |
 
 La grabación conserva unos 0,3 segundos previos a la activación para no perder
-el comienzo de las palabras. Espera unos 1,1 segundos de silencio para cerrar
-la frase y admite hasta 12 segundos por intervención. Antes de transcribir,
+el comienzo de las palabras en escucha automática. Espera unos 0,7 segundos de
+silencio para cerrar la frase en ese modo y admite hasta 12 segundos por
+intervención en ambos modos. Antes de transcribir,
 Silero filtra los tramos sin voz.
 
 Cada modelo se descarga al usarlo por primera vez. `--model` también admite
